@@ -12,10 +12,12 @@ This file is used for everything related to maps/tables including their definiti
 #define TABLE_SHIFT_FACTOR  8
 #define TABLE_SHIFT_POWER   (1UL<<TABLE_SHIFT_FACTOR)
 
-struct table3D {
-
+struct table3D {  
+protected:
+  // Prevent direct creation - must use derived class
   table3D(int8_t size) : axisSize(size) {}
-  
+
+public:
   int8_t axisSize;
 
   //Store the last X and Y coordinates in the table. This is used to make the next check faster
@@ -31,6 +33,10 @@ struct table3D {
   inline int16_t valuesSizeInBytes() const { return sq(axisSize)*sizeof(int8_t); }
   inline int16_t axisSizeInBytes() const { return axisSize*sizeof(int16_t); }
 
+  // These rely on the derived class memory layout. Alternatives are:
+  // 1. Virtual functions (SRAM bloat)
+  // 2. Full use of C++ templates. Would work and would save 1 byte per instance
+  //    but requires adoption across the code base
   inline int16_t* getXAxis() const { return (int16_t*)((int8_t*)this+sizeof(table3D)+valuesSizeInBytes()); }
   inline int16_t* getYAxis() const { return (int16_t*)((int8_t*)this+sizeof(table3D)+valuesSizeInBytes()+axisSizeInBytes()); }
   inline int8_t* getValues() const { return (int8_t*)this+sizeof(table3D); }
