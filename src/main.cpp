@@ -14,39 +14,41 @@ int freeRam ()
 
 #define TEST_BASELINE 0
 #define TEST_ORIGINAL 1
-#define TEST_COMPACT 2
-#define TEST_CASE TEST_COMPACT
+#define TEST_NEW 2
+#define TEST_CASE TEST_NEW
 
-#if TEST_CASE==TEST_COMPACT
+#define TEST_ITERATIONS 100
+
+#if TEST_CASE==TEST_NEW
 #include "new\table3d.h"
-//#include "new\table3d.hpp"
+#include "new\table3d.hpp"
 
-table3D<int8_t, 16, 16> fuelTable;
-table3D<int8_t, 16, 16> fuelTable2;
-table3D<int8_t, 16, 16> ignitionTable;
-table3D<int8_t, 16, 16> ignitionTable2;
-table3D<int8_t, 16, 16> afrTable;
-table3D<int8_t, 8, 8> stagingTable;
-table3D<int8_t, 8, 8> boostTable;
-table3D<int8_t, 8, 8> vvtTable;
-table3D<int8_t, 8, 8> wmiTable;
-table3D<int8_t, 6, 6> trim1Table;
-table3D<int8_t, 6, 6> trim2Table;
-table3D<int8_t, 6, 6> trim3Table;
-table3D<int8_t, 6, 6> trim4Table;
+table3D_impl<16> fuelTable;
+table3D_impl<16> fuelTable2;
+table3D_impl<16> ignitionTable;
+table3D_impl<16> ignitionTable2;
+table3D_impl<16> afrTable;
+table3D_impl<8> stagingTable;
+table3D_impl<8> boostTable;
+table3D_impl<8> vvtTable;
+table3D_impl<8> wmiTable;
+table3D_impl<6> trim1Table;
+table3D_impl<6> trim2Table;
+table3D_impl<6> trim3Table;
+table3D_impl<6> trim4Table;
 
-template <class _Ty, int8_t _xDim, int8_t _yDim>
-void setupTable(table3D<_Ty, _xDim, _yDim> *pTable, int8_t size, const int8_t *pValues, const int16_t *pXAxis, const int16_t *pYAxis)
+typedef table3D ITable3D;
+
+void setupTable(ITable3D *pTable, int8_t size, const int8_t *pValues, const int16_t *pXAxis, const int16_t *pYAxis)
 {
-  pTable->setXAxis(pXAxis, _xDim);
-  pTable->setYAxis(pYAxis, _yDim);
-  pTable->setValues(pValues);  
+  memcpy(pTable->getXAxis(), pXAxis, size * sizeof(int16_t));
+  memcpy(pTable->getYAxis(), pYAxis, size * sizeof(int16_t));
+  memcpy(pTable->getValues(), pValues, size * size * sizeof(pValues[0]));
 }
 
-template <class _Ty, int8_t _xDim, int8_t _yDim>
-long testHarnessGet3dTableValue(table3D<_Ty, _xDim, _yDim> *pTable, int16_t xValue, int16_t yValue)
+long testHarnessGet3dTableValue(table3D *pTable, int16_t xValue, int16_t yValue)
 {
-  return pTable->get3DTableValue(yValue, xValue);
+  return get3DTableValue(pTable, yValue, xValue);
 }
 
 #elif TEST_CASE==TEST_ORIGINAL
@@ -172,9 +174,10 @@ void setup() {
   setupTable(&trim3Table, 6, &values[0][0], xAxis, yAxis);
   setupTable(&trim4Table, 6, &values[0][0], xAxis, yAxis);
 
+  Serial.println(freeRam()); 
   unsigned long StartTime = millis();
 
-  int32_t sum = 0;
+  long sum = 0;
   sum += testTable(&fuelTable, 16, 16);
   sum += testTable(&stagingTable, 8, 8);
   sum += testTable(&trim1Table, 6, 6);
@@ -184,6 +187,7 @@ void setup() {
   Serial.println(sum);
   Serial.println(ElapsedTime);
   Serial.println(freeRam()); 
+  Serial.println(sizeof(table3D));
 }
 
 void loop() {
